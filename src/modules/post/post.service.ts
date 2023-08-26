@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Post } from './model/post.model';
-import { Sequelize } from 'sequelize-typescript';
 import { User } from 'src/modules/user/model/user.model';
 import { UpdatePostDTO } from './dtos/update-post.dto';
 
@@ -17,26 +16,20 @@ export class PostService {
   constructor(
     @InjectModel(Post) private postModel: typeof Post,
     @InjectModel(User) private userModel: typeof User,
-    private sequelize: Sequelize,
   ) {}
 
   async createPost(userId: number, content: string): Promise<Post> {
     const user = await this.userModel.findByPk(userId);
-
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    user.lastPostDate = new Date();
-    await user.save();
-
     const currentDate = new Date();
 
     if (
-      user.lastPostDate &&
-      user.lastPostDate.setUTCHours(0, 0, 0, 0) ===
-        currentDate.setUTCHours(0, 0, 0, 0).valueOf() &&
-      user.postsOnLastDate >= 5
+      user.lastPostDate.setHours(0, 0, 0, 0) ==
+        currentDate.setHours(0, 0, 0, 0) &&
+      user.postsOnLastDate == 5
     ) {
       throw new BadRequestException('User has reached the daily post limit');
     }
@@ -44,13 +37,10 @@ export class PostService {
     const post = await this.postModel.create({ userId, content });
 
     if (
-      user.lastPostDate == null ||
-      !user.lastPostDate.setUTCHours(0, 0, 0, 0) ||
-      user.lastPostDate.setUTCHours(0, 0, 0, 0) !==
-        currentDate.setUTCHours(0, 0, 0, 0).valueOf()
+      user.lastPostDate.setHours(0, 0, 0, 0) < currentDate.setHours(0, 0, 0, 0)
     ) {
-      user.lastPostDate = new Date();
       user.postsOnLastDate = 0;
+      user.lastPostDate = new Date();
     } else {
       user.postsOnLastDate++;
     }

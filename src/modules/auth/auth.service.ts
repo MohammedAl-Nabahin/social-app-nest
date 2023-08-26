@@ -34,20 +34,6 @@ export class AuthService {
       password: hashedPassword,
     };
 
-    // const SignUpUser = this.userModel.create(newUserDTO);
-
-    // const User = {
-    //   sub: (await SignUpUser).id,
-    //   username: (await SignUpUser).username,
-    //   email: (await SignUpUser).email,
-    // };
-
-    // const payload = {
-    //   ...User,
-    // };
-    // const accessToken = this.jwtService.sign(payload);
-    // return { accessToken };
-
     return this.userModel.create(newUserDTO);
   }
 
