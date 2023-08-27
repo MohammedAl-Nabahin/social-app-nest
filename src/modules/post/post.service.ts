@@ -39,7 +39,7 @@ export class PostService {
     if (
       user.lastPostDate.setHours(0, 0, 0, 0) < currentDate.setHours(0, 0, 0, 0)
     ) {
-      user.postsOnLastDate = 0;
+      user.postsOnLastDate = 1;
       user.lastPostDate = new Date();
     } else {
       user.postsOnLastDate++;
