@@ -5,6 +5,7 @@ import { UserDTO } from '../user/dtos/create-user.dto';
 import { InjectModel } from '@nestjs/sequelize';
 import { compare, encode } from 'src/common/utils/bcrypt';
 import { LogInDTO } from './dtos/login.dto';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class AuthService {
@@ -17,8 +18,7 @@ export class AuthService {
   async register(userDTO: UserDTO): Promise<User> {
     const newUser = await this.userModel.findOne({
       where: {
-        username: userDTO.username,
-        email: userDTO.email,
+        [Op.or]: [{ username: userDTO.username }, { email: userDTO.email }],
       },
     });
 
