@@ -1,21 +1,28 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/model/user.model';
 import { UserDTO } from '../user/dtos/create-user.dto';
-import { InjectModel } from '@nestjs/sequelize';
 import { compare, encode } from 'src/common/utils/bcrypt';
 import { LogInDTO } from './dtos/login.dto';
-import { Op } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
+import { USER_REPOSITORY } from 'src/common/constants/constant';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger(AuthService.name);
   constructor(
     private readonly jwtService: JwtService,
-    @InjectModel(User)
-    private readonly userModel: typeof User,
+    @Inject(USER_REPOSITORY)
+    private readonly userModel,
   ) {}
 
-  async register(userDTO: UserDTO): Promise<User> {
+  async register(userDTO: UserDTO, transaction: Transaction): Promise<User> {
     const newUser = await this.userModel.findOne({
       where: {
         [Op.or]: [{ username: userDTO.username }, { email: userDTO.email }],
@@ -33,8 +40,8 @@ export class AuthService {
       ...userDTO,
       password: hashedPassword,
     };
-
-    return this.userModel.create(newUserDTO);
+    this.logger.log('Signed Up');
+    return this.userModel.create(newUserDTO, { transaction });
   }
 
   async login(userDTO: LogInDTO): Promise<{ accessToken: string }> {
@@ -52,6 +59,8 @@ export class AuthService {
 
     const User = {
       sub: user.id,
+      id: user.id,
+      role: user.role,
       username: user.username,
       email: user.email,
     };
@@ -60,6 +69,7 @@ export class AuthService {
       ...User,
     };
     const accessToken = this.jwtService.sign(payload);
+    this.logger.log('Logged In');
     return { accessToken };
   }
 

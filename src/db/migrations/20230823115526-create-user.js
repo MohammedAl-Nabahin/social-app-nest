@@ -24,7 +24,7 @@ module.exports = {
         unique: true,
       },
       lastPostDate: {
-        allowNull: false,
+        allowNull: true,
         type: Sequelize.DATE,
       },
       postsOnLastDate: {
@@ -32,6 +32,13 @@ module.exports = {
         defaultValue: 0,
         type: Sequelize.INTEGER,
       },
+
+      role: {
+        type: Sequelize.ENUM('user', 'admin'),
+        allowNull: false,
+        defaultValue: 'user',
+      },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -43,6 +50,19 @@ module.exports = {
       deletedAt: {
         allowNull: true,
         type: Sequelize.DATE,
+      },
+
+      createdBy: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+      },
+      updatedBy: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
+      },
+      deletedBy: {
+        allowNull: true,
+        type: Sequelize.INTEGER,
       },
     });
   },

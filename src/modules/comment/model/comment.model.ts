@@ -12,7 +12,7 @@ import {
 import { Post } from 'src/modules/post/model/post.model';
 import { User } from 'src/modules/user/model/user.model';
 
-@Table({ paranoid: true })
+@Table({ paranoid: true, tableName: 'comments' })
 export class Comment extends Model<Comment> {
   @PrimaryKey
   @AutoIncrement
@@ -56,4 +56,13 @@ export class Comment extends Model<Comment> {
 
   @Column({ type: DataType.DATE })
   deletedAt: Date;
+
+  @Column
+  createdBy?: number;
+
+  @Column
+  updatedBy?: number;
+
+  @Column
+  deletedBy?: number;
 }

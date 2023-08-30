@@ -6,7 +6,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get(':userId')
-  async getUser(@Param('userId') userId: string) {
+  async getUser(@Param('userId') userId: number) {
     const user = await this.userService.getUserById(userId);
     return user;
   }

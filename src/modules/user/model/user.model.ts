@@ -7,10 +7,11 @@ import {
   PrimaryKey,
   AutoIncrement,
 } from 'sequelize-typescript';
+import { Role } from 'src/common/enum/role.enum';
 import { Comment } from 'src/modules/comment/model/comment.model';
 import { Post } from 'src/modules/post/model/post.model';
 
-@Table
+@Table({ paranoid: true, tableName: 'users' })
 export class User extends Model<User> {
   @PrimaryKey
   @AutoIncrement
@@ -41,11 +42,14 @@ export class User extends Model<User> {
   @HasMany(() => Comment)
   comments: Comment[];
 
-  @Column({ type: DataType.DATE, allowNull: false })
-  lastPostDate: Date;
+  @Column({ type: DataType.DATE, allowNull: true })
+  lastPostDate?: Date;
 
   @Column({ type: DataType.NUMBER, defaultValue: 0 })
   postsOnLastDate: number;
+
+  @Column
+  role: Role;
 
   @Column
   createdAt?: Date;
@@ -55,4 +59,13 @@ export class User extends Model<User> {
 
   @Column
   deletedAt?: Date;
+
+  @Column
+  createdBy?: number;
+
+  @Column
+  updatedBy?: number;
+
+  @Column
+  deletedBy?: number;
 }

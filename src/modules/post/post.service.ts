@@ -3,22 +3,33 @@ import {
   ForbiddenException,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
 import { Post } from './model/post.model';
-import { User } from 'src/modules/user/model/user.model';
 import { UpdatePostDTO } from './dtos/update-post.dto';
+import { Transaction } from 'sequelize';
+import {
+  POST_REPOSITORY,
+  USER_REPOSITORY,
+} from 'src/common/constants/constant';
+import { Role } from 'src/common/enum/role.enum';
 
 @Injectable()
 export class PostService {
+  private logger = new Logger(PostService.name);
   constructor(
-    @InjectModel(Post) private postModel: typeof Post,
-    @InjectModel(User) private userModel: typeof User,
+    @Inject(POST_REPOSITORY) private postModel,
+    @Inject(USER_REPOSITORY) private userModel,
   ) {}
 
-  async createPost(userId: number, content: string): Promise<Post> {
+  async createPost(
+    userId: number,
+    content: string,
+    transaction: Transaction,
+  ): Promise<Post> {
     const user = await this.userModel.findByPk(userId);
     if (!user) {
       throw new NotFoundException('User not found');
@@ -27,6 +38,7 @@ export class PostService {
     const currentDate = new Date();
 
     if (
+      user.lastPostDate &&
       user.lastPostDate.setHours(0, 0, 0, 0) ==
         currentDate.setHours(0, 0, 0, 0) &&
       user.postsOnLastDate == 5
@@ -34,18 +46,23 @@ export class PostService {
       throw new BadRequestException('User has reached the daily post limit');
     }
 
-    const post = await this.postModel.create({ userId, content });
+    const post = await this.postModel.create(
+      { userId, content },
+      { transaction },
+    );
 
     if (
+      user.lastPostDate == null ||
       user.lastPostDate.setHours(0, 0, 0, 0) < currentDate.setHours(0, 0, 0, 0)
     ) {
-      user.postsOnLastDate = 1;
-      user.lastPostDate = new Date();
-    } else {
       user.postsOnLastDate++;
+      user.lastPostDate = new Date();
     }
 
+    post.createdBy = userId;
+
     await user.save();
+    this.logger.log('Post Creation Success');
 
     return post;
   }
@@ -72,12 +89,14 @@ export class PostService {
     id: number,
     userId: number,
     updatedPost: UpdatePostDTO,
+    transaction: Transaction,
   ): Promise<Post> {
     const post = await this.postModel.findByPk(id);
     const oldData = post.content;
 
     const [affectedCount] = await this.postModel.update(updatedPost, {
       where: { id, userId },
+      transaction,
     });
 
     if (affectedCount === 0) {
@@ -101,16 +120,27 @@ export class PostService {
     post.editFlag = JSON.parse(edits);
     post.isEdited = true;
 
-    await post.save();
+    if (post.userId == userId || post.user.role == Role.Admin) {
+      post.updatedBy = userId;
+      await post.save();
+      this.logger.log('Post Edit Success');
 
-    await post.update({
-      ...updatedPost,
-    });
+      await post.update(
+        {
+          ...updatedPost,
+        },
+        { transaction },
+      );
 
-    return this.postModel.findByPk(id);
+      return this.postModel.findByPk(id);
+    }
   }
 
-  async deletePost(id: number, userId: number): Promise<void> {
+  async deletePost(
+    id: number,
+    userId: number,
+    transaction: Transaction,
+  ): Promise<void> {
     const user = await this.userModel.findByPk(userId);
     const post = await this.getPostById(id);
 
@@ -124,7 +154,8 @@ export class PostService {
       throw new NotFoundException('Post not found');
     }
     if (post.userId == user.id) {
-      await post.destroy();
+      await this.postModel.destroy({ where: { id }, transaction });
+      this.logger.log('Post Delete Success');
     } else {
       throw new HttpException(
         'you  cant delete this comment',

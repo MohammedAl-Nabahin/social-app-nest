@@ -10,22 +10,27 @@ import {
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDTO } from './dtos/create-post.dto';
-import { User } from 'src/common/decorators/user.decorator';
+import { UserPrinciple } from 'src/common/decorators/user.decorator';
 import IUserInterface from 'src/modules/user/user.interface';
 import { UpdatePostDTO } from './dtos/update-post.dto';
-import { TransactionInterceptor } from 'src/common/providers/interceptors/transaction.interceptor';
+import { TransactionDecorator } from 'src/common/decorators/transaction.decorator';
+import { Transaction } from 'sequelize';
+import { Roles } from 'src/common/decorators/role.decorator';
+import { Role } from 'src/common/enum/role.enum';
+import { TransactionInterceptor } from 'src/common/interceptors/transaction.interceptor';
 
+@UseInterceptors(TransactionInterceptor)
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post()
-  @UseInterceptors(new TransactionInterceptor())
   async createPost(
     @Body() post: PostDTO,
-    @User() user: IUserInterface,
+    @UserPrinciple() user: IUserInterface,
+    @TransactionDecorator() transaction: Transaction,
   ): Promise<any> {
-    return this.postService.createPost(user.sub, post.content);
+    return this.postService.createPost(user.sub, post.content, transaction);
   }
 
   @Get(':id')
@@ -39,18 +44,22 @@ export class PostController {
   }
 
   @Patch(':id')
-  @UseInterceptors(new TransactionInterceptor())
+  @Roles(Role.Admin)
   async editPost(
     @Param('id') id: number,
     @Body() updatedPost: UpdatePostDTO,
-    @User() user: IUserInterface,
+    @UserPrinciple() user: IUserInterface,
+    @TransactionDecorator() transaction: Transaction,
   ) {
-    return this.postService.editPost(id, user.sub, updatedPost);
+    return this.postService.editPost(id, user.sub, updatedPost, transaction);
   }
 
   @Delete(':id')
-  @UseInterceptors(new TransactionInterceptor())
-  async deletePost(@Param('id') id: number, @User() user: IUserInterface) {
-    this.postService.deletePost(id, user.sub);
+  async deletePost(
+    @Param('id') id: number,
+    @UserPrinciple() user: IUserInterface,
+    @TransactionDecorator() transaction: Transaction,
+  ) {
+    this.postService.deletePost(id, user.sub, transaction);
   }
 }

@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsEmail, Length, IsString } from 'class-validator';
+import { Role } from 'src/common/enum/role.enum';
 
 export class UserDTO {
   @IsNotEmpty()
@@ -13,4 +14,8 @@ export class UserDTO {
   @IsNotEmpty()
   @IsEmail()
   email: string;
+
+  lastPostDate?: Date;
+
+  role?: Role;
 }

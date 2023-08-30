@@ -1,21 +1,23 @@
 import { Module } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CommentController } from './comment.controller';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { Comment } from './model/comment.model';
-import { PostService } from 'src/modules/post/post.service';
-import { Post } from 'src/modules/post/model/post.model';
-import { User } from 'src/modules/user/model/user.model';
-import { UserService } from 'src/modules/user/user.service';
+import { UserModule } from '../user/user.module';
+import { PostModule } from '../post/post.module';
+import { userProviders } from '../user/user.provider';
+import { commentProviders } from './comment.provider';
+import { postProviders } from '../post/post.provider';
+import { databaseProviders } from '../database/database.providers';
 
 @Module({
-  imports: [
-    SequelizeModule.forFeature([Comment]),
-    SequelizeModule.forFeature([Post]),
-    SequelizeModule.forFeature([User]),
-  ],
+  imports: [UserModule, PostModule],
   controllers: [CommentController],
-  providers: [CommentService, PostService, UserService],
+  providers: [
+    CommentService,
+    ...userProviders,
+    ...commentProviders,
+    ...postProviders,
+    ...databaseProviders,
+  ],
   exports: [CommentService],
 })
 export class CommentModule {}
