@@ -6,7 +6,6 @@ import { PostModule } from '../post/post.module';
 import { userProviders } from '../user/user.provider';
 import { commentProviders } from './comment.provider';
 import { postProviders } from '../post/post.provider';
-import { databaseProviders } from '../database/database.providers';
 
 @Module({
   imports: [UserModule, PostModule],
@@ -16,7 +15,6 @@ import { databaseProviders } from '../database/database.providers';
     ...userProviders,
     ...commentProviders,
     ...postProviders,
-    ...databaseProviders,
   ],
   exports: [CommentService],
 })

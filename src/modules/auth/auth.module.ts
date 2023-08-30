@@ -6,7 +6,6 @@ import { JwtStrategy } from 'src/common/utils/jwt.strategy';
 import { UserModule } from '../user/user.module';
 import * as dotenv from 'dotenv';
 import { userProviders } from '../user/user.provider';
-import { databaseProviders } from '../database/database.providers';
 
 dotenv.config();
 
@@ -18,7 +17,7 @@ dotenv.config();
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, ...userProviders, ...databaseProviders],
+  providers: [AuthService, JwtStrategy, ...userProviders],
   exports: [JwtModule, AuthService],
 })
 export class AuthModule {}
